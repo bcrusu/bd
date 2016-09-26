@@ -1,5 +1,6 @@
 package com.bcrusu.gitHubEvents.watcher;
 
+import com.bcrusu.gitHubEvents.core.GitHubEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.OkHttpClient;

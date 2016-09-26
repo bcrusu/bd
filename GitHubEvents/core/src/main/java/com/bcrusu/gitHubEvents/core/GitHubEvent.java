@@ -1,8 +1,8 @@
-package com.bcrusu.gitHubEvents.watcher;
+package com.bcrusu.gitHubEvents.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-class GitHubEvent {
+public class GitHubEvent {
     private final String _id;
     private final String _type;
     private final String _createdAt;
@@ -31,7 +31,7 @@ class GitHubEvent {
         return _json;
     }
 
-    static GitHubEvent create(JsonNode jsonNode) {
+    public static GitHubEvent create(JsonNode jsonNode) {
         String id = jsonNode.get("id").textValue();
         String type = jsonNode.get("type").textValue();
         String createdAt = jsonNode.get("created_at").textValue();
