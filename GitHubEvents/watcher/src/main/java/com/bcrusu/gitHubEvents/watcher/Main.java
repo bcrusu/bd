@@ -4,14 +4,16 @@ import com.bcrusu.gitHubEvents.watcher.api.GitHubEventSource;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            System.out.println("Invalid arguments.");
+        CommandLineArgs commandLineArgs = CommandLineArgs.parse(args);
+        if (commandLineArgs == null) {
+            System.out.println("Invalid command line arguments.");
+            CommandLineArgs.printHelp();
             System.exit(-1);
             return;
         }
 
-        String oauthToken = args[0];
-        String url = "https://api.github.com/events";
+        String oauthToken = commandLineArgs.getOauth2Token();
+        String url = commandLineArgs.getUrl();
 
         new GitHubEventSource(oauthToken, url)
                 .getEventsSource().subscribe(x -> System.out.println(x.getId()));
