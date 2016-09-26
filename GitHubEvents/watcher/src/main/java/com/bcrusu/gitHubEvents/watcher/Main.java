@@ -1,5 +1,7 @@
 package com.bcrusu.gitHubEvents.watcher;
 
+import com.bcrusu.gitHubEvents.watcher.api.GitHubEventSource;
+
 public class Main {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {

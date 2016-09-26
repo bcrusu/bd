@@ -1,4 +1,4 @@
-package com.bcrusu.gitHubEvents.core;
+package com.bcrusu.gitHubEvents.core.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 

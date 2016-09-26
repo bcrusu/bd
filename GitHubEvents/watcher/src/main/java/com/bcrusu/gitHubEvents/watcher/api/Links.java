@@ -1,4 +1,4 @@
-package com.bcrusu.gitHubEvents.watcher;
+package com.bcrusu.gitHubEvents.watcher.api;
 
 import okhttp3.Response;
 

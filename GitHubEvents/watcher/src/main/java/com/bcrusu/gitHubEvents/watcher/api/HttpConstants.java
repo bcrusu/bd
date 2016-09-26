@@ -1,4 +1,4 @@
-package com.bcrusu.gitHubEvents.watcher;
+package com.bcrusu.gitHubEvents.watcher.api;
 
 class HttpConstants {
     final static String HTTP_HEADER_ETAG = "ETag";

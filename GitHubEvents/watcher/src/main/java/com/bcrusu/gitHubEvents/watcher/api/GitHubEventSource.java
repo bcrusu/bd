@@ -1,6 +1,6 @@
-package com.bcrusu.gitHubEvents.watcher;
+package com.bcrusu.gitHubEvents.watcher.api;
 
-import com.bcrusu.gitHubEvents.core.GitHubEvent;
+import com.bcrusu.gitHubEvents.core.api.GitHubEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.OkHttpClient;
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-class GitHubEventSource {
+public class GitHubEventSource {
     private final static String API_MEDIA_TYPE = "application/vnd.github.v3+json";
     private final static String HTTP_HEADER_X_POLL_INTERVAL = "X-Poll-Interval";
 
