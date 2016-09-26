@@ -10,29 +10,38 @@ import rx.Observable;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class GitHubEventSource {
+class GitHubEventSource {
     private final static String API_MEDIA_TYPE = "application/vnd.github.v3+json";
     private final static String HTTP_HEADER_X_POLL_INTERVAL = "X-Poll-Interval";
 
     private final String _oauthToken;
     private final String _url;
     private final int _pollInterval;
+    private final OkHttpClient _client;
+
     private Observable<GitHubEvent> _eventSource = null;
-    private ResponseInfo _lastResponseInfo = null;
+    private RateLimit _lastRateLimit = null;
+    private String _lastETag = null;
+    private String _lastLastModified = null;
+    private String _lastEventId = null;  // last seen event id
 
     public GitHubEventSource(String oauthToken, String url, int pollInterval) {
         _oauthToken = oauthToken;
         _url = url;
         _pollInterval = pollInterval;
+        _client = new OkHttpClient();
     }
 
     public GitHubEventSource(String oauthToken, String url) {
-        this(oauthToken, url, 5);
+        this(oauthToken, url, 2);
     }
 
     public Observable<GitHubEvent> getEventsSource() {
@@ -45,43 +54,70 @@ public class GitHubEventSource {
 
     private Observable<GitHubEvent> createEventsSource() {
         Observable<GitHubEvent> result = Observable.create(subscriber -> {
-            // if the rate limit is exceeded do not call API
-            if (isRateLimitExceeded()) {
-                //TODO: throw exception and use retryWhen below to wait until the rate limit reset passes
-                subscriber.onCompleted();
-                return;
+            String url = _url;
+            boolean isFirstPage = true;
+            String eTag = _lastETag;
+            String lastModified = _lastLastModified;
+
+            LinkedList<GitHubEvent> toEmit = new LinkedList<>();
+            Set<String> seenEventIds = new HashSet<>();  // some events are pushed to next page during consecutive fetches
+
+            page_fetch_loop:
+            while (true) {
+                if (isRateLimitExceeded())
+                    break;
+
+                Response response = fetchPage(url, eTag, lastModified);
+                if (response == null || !response.isSuccessful()) {
+                    // TODO: retry logic (try multiple times to fetch the page before breaking the fetch loop)
+                    break;
+                }
+
+                if (response.code() == HttpConstants.HTTP_STATUS_CODE_304_NOT_MODIFIED)
+                    break;
+
+                if (isFirstPage) {
+                    _lastETag = response.header(HttpConstants.HTTP_HEADER_ETAG);
+                    _lastLastModified = response.header(HttpConstants.HTTP_HEADER_LAST_MODIFIED);
+                }
+                _lastRateLimit = RateLimit.parse(response);
+
+
+                List<GitHubEvent> events = parseResponseBody(response.body());
+                if (events == null)
+                    break;
+
+                for (GitHubEvent event : events) {
+                    String eventId = event.getId();
+
+                    // skip events from previous page
+                    if (seenEventIds.contains(eventId))
+                        continue;
+
+                    // stop when reached the last fetched event
+                    if (_lastEventId != null && _lastEventId.compareTo(eventId) == 0)
+                        break page_fetch_loop;
+
+                    toEmit.addFirst(event);
+                    seenEventIds.add(eventId);
+                }
+
+                Links links = Links.parse(response);
+                if (links == null || links.getNext() == null)
+                    break;
+
+                url = links.getNext();
+                isFirstPage = false;
+                eTag = null;
+                lastModified = null;
             }
 
-            OkHttpClient client = new OkHttpClient();
-            Request request = buildFirstPageRequest();
+            if (toEmit.size() > 0) {
+                // emit events
+                toEmit.forEach(subscriber::onNext);
 
-            try {
-                Response response = client.newCall(request).execute();
-
-                if (!response.isSuccessful()) {
-                    //TODO: proper error
-                    subscriber.onError(null);
-                    return;
-                }
-
-                if (response.code() == HttpConstants.HTTP_STATUS_CODE_304_NOT_MODIFIED) {
-                    //TODO: use X-Poll-Interval header
-                    subscriber.onCompleted();
-                    return;
-                }
-
-                ResponseInfo responseInfo = ResponseInfo.parse(response);
-
-                //TODO: read events (all pages) and emit
-                List<GitHubEvent> events = parseResponseBody(response.body());
-
-                for (GitHubEvent event : events)
-                    subscriber.onNext(event);
-
-                _lastResponseInfo = responseInfo;
-
-            } catch (IOException e) {
-                //TODO: log
+                // save last event id to be used on next poll operation
+                _lastEventId = toEmit.getLast().getId();
             }
 
             subscriber.onCompleted();
@@ -95,25 +131,23 @@ public class GitHubEventSource {
                 .repeatWhen(source -> source.flatMap(x -> Observable.timer(_pollInterval, TimeUnit.SECONDS)));
     }
 
-    private Request buildFirstPageRequest() {
-        Request.Builder builder = createRequestBuilder(_url);
-
-        if (_lastResponseInfo != null) {
-            String eTag = _lastResponseInfo.getETag();
-            if (eTag != null)
-                builder.header(HttpConstants.HTTP_HEADER_IF_NONE_MATCH, eTag);
-
-            String lastModified = _lastResponseInfo.getLastModified();
-            if (lastModified != null)
-                builder.header(HttpConstants.HTTP_HEADER_IF_MODIFIED_SINCE, lastModified);
-        }
-
-        return builder.build();
-    }
-
-    private Request buildNextPageRequest(String url) {
+    private Response fetchPage(String url, String eTag, String lastModified) {
         Request.Builder builder = createRequestBuilder(url);
-        return builder.build();
+
+        if (eTag != null)
+            builder.header(HttpConstants.HTTP_HEADER_IF_NONE_MATCH, eTag);
+
+        if (lastModified != null)
+            builder.header(HttpConstants.HTTP_HEADER_IF_MODIFIED_SINCE, lastModified);
+
+        Request request = builder.build();
+
+        try {
+            return _client.newCall(request).execute();
+        } catch (IOException e) {
+            //TODO: log
+            return null;
+        }
     }
 
     private Request.Builder createRequestBuilder(String url) {
@@ -125,12 +159,13 @@ public class GitHubEventSource {
     }
 
     private boolean isRateLimitExceeded() {
+        RateLimit rateLimit = _lastRateLimit;
+
         // rate limits are returned by the API for each request
         // if this is the first API request there is nothing to check
-        if (_lastResponseInfo == null)
+        if (rateLimit == null)
             return false;
 
-        RateLimit rateLimit = _lastResponseInfo.getRateLimit();
         if (rateLimit.getRemaining() > 0)
             return false;
 
@@ -141,11 +176,16 @@ public class GitHubEventSource {
         return true;
     }
 
-    private List<GitHubEvent> parseResponseBody(ResponseBody body) throws IOException {
-        JsonNode jsonNode = new ObjectMapper().readTree(body.byteStream());
+    private List<GitHubEvent> parseResponseBody(ResponseBody body) {
+        try {
+            JsonNode jsonNode = new ObjectMapper().readTree(body.byteStream());
 
-        return StreamSupport.stream(jsonNode.spliterator(), false)
-                .map(GitHubEvent::create)
-                .collect(Collectors.toList());
+            return StreamSupport.stream(jsonNode.spliterator(), false)
+                    .map(GitHubEvent::create)
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            //TODO: log
+            return null;
+        }
     }
 }
