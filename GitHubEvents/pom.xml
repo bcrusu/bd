@@ -12,6 +12,7 @@
     <modules>
         <module>core</module>
         <module>watcher</module>
+        <module>writer-kafka</module>
     </modules>
 
     <properties>
