@@ -28,7 +28,7 @@ public class GitHubEventSource {
     private final int _pollInterval;
     private final OkHttpClient _client;
 
-    private Observable<GitHubEvent> _eventSource = null;
+    private Observable<GitHubEvent> _observable = null;
     private RateLimit _lastRateLimit = null;
     private String _lastETag = null;
     private String _lastLastModified = null;
@@ -42,18 +42,18 @@ public class GitHubEventSource {
     }
 
     public GitHubEventSource(String oauthToken, String url) {
-        this(oauthToken, url, 2);
+        this(oauthToken, url, 5);
     }
 
-    public Observable<GitHubEvent> getEventsSource() {
-        if (_eventSource == null) {
-            _eventSource = createEventsSource();
+    public Observable<GitHubEvent> getObservable() {
+        if (_observable == null) {
+            _observable = createObservable();
         }
 
-        return _eventSource;
+        return _observable;
     }
 
-    private Observable<GitHubEvent> createEventsSource() {
+    private Observable<GitHubEvent> createObservable() {
         Observable<GitHubEvent> result = Observable.create(subscriber -> {
             String url = _url;
             boolean isFirstPage = true;

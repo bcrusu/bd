@@ -5,16 +5,18 @@ import com.bcrusu.gitHubEvents.core.writer.IEventWriter;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
-public class KafkaEventWriter implements IEventWriter, Closeable {
+public class KafkaEventWriter implements IEventWriter {
     private final KafkaProducer<String, String> _producer;
     private final String _topic;
 
     public KafkaEventWriter(String bootstrapServers, String topic) {
+        if (bootstrapServers == null) throw new IllegalArgumentException("bootstrapServers");
+        if (topic == null) throw new IllegalArgumentException("topic");
+
         _producer = createKafkaProducer(bootstrapServers);
         _topic = topic;
     }
