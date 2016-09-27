@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>gitHubEvents-core</artifactId>
-    <name>Github Events Core</name>
+    <name>GitHub Events Core</name>
 
     <dependencies>
         <dependency>

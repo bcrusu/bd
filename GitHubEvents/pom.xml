@@ -11,8 +11,8 @@
 
     <modules>
         <module>core</module>
-        <module>watcher</module>
-        <module>writer-kafka</module>
+        <module>loader</module>
+        <module>indexer</module>
     </modules>
 
     <properties>
