@@ -17,6 +17,18 @@ class CommandLineArgs {
         _commandLine = commandLine;
     }
 
+    public String getId() {
+        return _commandLine.getOptionValue("id");
+    }
+
+    public String getEventWriterType() {
+        String result = EventWriterFactory.EVENT_WRITER_TYPE_ELASTICSEARCH;
+        if (_commandLine.hasOption("ew"))
+            result = _commandLine.getOptionValue("ew");
+
+        return result;
+    }
+
     public String getKafkaServer() {
         String result = DEFAULT_KAFKA_SERVER;
         if (_commandLine.hasOption("ks"))
@@ -47,6 +59,19 @@ class CommandLineArgs {
 
     private static Options buildOptions() {
         Options result = new Options();
+
+        result.addOption(Option.builder("ew")
+                .required()
+                .longOpt("event_writer")
+                .hasArg()
+                .desc("Event Writer Type")
+                .build());
+
+        result.addOption(Option.builder("id")
+                .required()
+                .hasArg()
+                .desc("Indexer ID")
+                .build());
 
         addKafkaOptions(result);
 
