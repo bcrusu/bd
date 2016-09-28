@@ -1,17 +1,20 @@
 package com.bcrusu.gitHubEvents.loader.writer;
 
 import com.bcrusu.gitHubEvents.loader.api.GitHubEvent;
-import com.bcrusu.gitHubEvents.loader.writer.IEventWriter;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
 public class KafkaEventWriter implements IEventWriter {
+    private static final Logger _logger = LoggerFactory.getLogger(KafkaEventWriter.class);
+
     private final KafkaProducer<String, String> _producer;
     private final String _topic;
 
@@ -33,7 +36,7 @@ public class KafkaEventWriter implements IEventWriter {
         try {
             _producer.send(record).get();
         } catch (InterruptedException | ExecutionException e) {
-            //TODO: log
+            _logger.error("Error sending message", e);
         }
     }
 

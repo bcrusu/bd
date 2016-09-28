@@ -1,12 +1,13 @@
 package com.bcrusu.gitHubEvents.loader.api;
 
-import com.bcrusu.gitHubEvents.loader.api.GitHubEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 
 import java.io.IOException;
@@ -20,6 +21,8 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class GitHubEventSource {
+    private static final Logger _logger = LoggerFactory.getLogger(GitHubEventSource.class);
+
     private final static String API_MEDIA_TYPE = "application/vnd.github.v3+json";
     private final static String HTTP_HEADER_X_POLL_INTERVAL = "X-Poll-Interval";
 
@@ -34,7 +37,7 @@ public class GitHubEventSource {
     private String _lastLastModified = null;
     private String _lastEventId = null;  // last seen event id
 
-    public GitHubEventSource(String oauthToken, String url, int pollInterval) {
+    private GitHubEventSource(String oauthToken, String url, int pollInterval) {
         _oauthToken = oauthToken;
         _url = url;
         _pollInterval = pollInterval;
@@ -81,8 +84,9 @@ public class GitHubEventSource {
                     _lastETag = response.header(HttpConstants.HTTP_HEADER_ETAG);
                     _lastLastModified = response.header(HttpConstants.HTTP_HEADER_LAST_MODIFIED);
                 }
-                _lastRateLimit = RateLimit.parse(response);
 
+                _lastRateLimit = RateLimit.parse(response);
+                _logger.info("GitHub API rate limit: limit={}, remaining={}", _lastRateLimit.getLimit(), _lastRateLimit.getRemaining());
 
                 List<GitHubEvent> events = parseResponseBody(response.body());
                 if (events == null)
@@ -133,6 +137,8 @@ public class GitHubEventSource {
     }
 
     private Response fetchPage(String url, String eTag, String lastModified) {
+        _logger.info("Fetching url {}", url);
+
         Request.Builder builder = createRequestBuilder(url);
 
         if (eTag != null)
@@ -146,7 +152,7 @@ public class GitHubEventSource {
         try {
             return _client.newCall(request).execute();
         } catch (IOException e) {
-            //TODO: log
+            _logger.error(String.format("Error fetching url {}", url), e);
             return null;
         }
     }
@@ -178,14 +184,22 @@ public class GitHubEventSource {
     }
 
     private List<GitHubEvent> parseResponseBody(ResponseBody body) {
+        byte[] bodyBytes;
         try {
-            JsonNode jsonNode = new ObjectMapper().readTree(body.byteStream());
+            bodyBytes = body.bytes();
+        } catch (IOException e) {
+            _logger.error("Error reading response body", e);
+            return null;
+        }
+
+        try {
+            JsonNode jsonNode = new ObjectMapper().readTree(bodyBytes);
 
             return StreamSupport.stream(jsonNode.spliterator(), false)
                     .map(GitHubEvent::create)
                     .collect(Collectors.toList());
         } catch (IOException e) {
-            //TODO: log
+            _logger.error("Error parsing response body", e);
             return null;
         }
     }

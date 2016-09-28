@@ -1,6 +1,8 @@
 package com.bcrusu.gitHubEvents.indexer;
 
 import com.bcrusu.gitHubEvents.indexer.writer.IEventWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscription;
 
@@ -8,6 +10,8 @@ import java.io.Closeable;
 import java.io.IOException;
 
 class IndexerEngine implements Closeable {
+    private static final Logger _logger = LoggerFactory.getLogger(IndexerEngine.class);
+
     private final KafkaEventSource _eventSource;
     private final IEventWriter _eventWriter;
     private Subscription _subscription;
@@ -35,6 +39,8 @@ class IndexerEngine implements Closeable {
     }
 
     private void processEvent(Event event) {
+        _logger.debug("Processing event: {}", event.getId());
+
         _eventWriter.write(event);
     }
 }

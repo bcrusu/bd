@@ -60,7 +60,7 @@ class KafkaEventSource {
 
     private KafkaConsumer<String, String> createKafkaConsumer() {
         Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, _bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "gitHubEvents-indexer");
         props.put(ConsumerConfig.CLIENT_ID_CONFIG, "gitHubEvents-indexer-" + _clientId);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
