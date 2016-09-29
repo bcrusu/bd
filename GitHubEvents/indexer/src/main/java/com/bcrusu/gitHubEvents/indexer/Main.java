@@ -41,7 +41,7 @@ public class Main {
         String id = args.getId();
         String bootstrapServers = args.getKafkaServer();
         String topic = args.getKafkaTopic();
-        boolean seekToBeginning = args.getSeekToBeginning();
+        boolean seekToBeginning = args.getKafkaSeekToBeginning();
 
         return new KafkaEventSource(id, bootstrapServers, topic, seekToBeginning);
     }

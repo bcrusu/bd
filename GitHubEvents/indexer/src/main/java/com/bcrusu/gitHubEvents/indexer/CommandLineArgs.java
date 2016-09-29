@@ -4,6 +4,10 @@ import org.apache.commons.cli.*;
 
 class CommandLineArgs {
     private final static String DEFAULT_KAFKA_SERVER = "localhost:9092";
+    private final static String DEFAULT_ELASTICSEARCH_SERVER_ADDRESS = "localhost";
+    private final static int DEFAULT_ELASTICSEARCH_SERVER_PORT = 9300;
+    private final static String DEFAULT_ELASTICSEARCH_CLUSTER_NAME = "elasticsearch";
+    private final static String DEFAULT_ELASTICSEARCH_INDEX_NAME = "gitHubEvents";
 
     private static Options _options;
 
@@ -41,7 +45,7 @@ class CommandLineArgs {
         return _commandLine.getOptionValue("kt");
     }
 
-    public boolean getSeekToBeginning() {
+    public boolean getKafkaSeekToBeginning() {
         return _commandLine.hasOption("skt");
     }
 
@@ -54,6 +58,38 @@ class CommandLineArgs {
         } catch (ParseException e) {
             return null;
         }
+    }
+
+    public String getElasticsearchServerAddress() {
+        String result = DEFAULT_ELASTICSEARCH_SERVER_ADDRESS;
+        if (_commandLine.hasOption("esa"))
+            result = _commandLine.getOptionValue("esa");
+
+        return result;
+    }
+
+    public int getElasticsearchServerPort() {
+        int result = DEFAULT_ELASTICSEARCH_SERVER_PORT;
+        if (_commandLine.hasOption("esp"))
+            result = Integer.parseInt(_commandLine.getOptionValue("esp"));
+
+        return result;
+    }
+
+    public String getElasticsearchClusterName() {
+        String result = DEFAULT_ELASTICSEARCH_CLUSTER_NAME;
+        if (_commandLine.hasOption("esc"))
+            result = _commandLine.getOptionValue("esc");
+
+        return result;
+    }
+
+    public String getElasticsearchIndex() {
+        String result = DEFAULT_ELASTICSEARCH_INDEX_NAME;
+        if (_commandLine.hasOption("esi"))
+            result = _commandLine.getOptionValue("esi");
+
+        return result;
     }
 
     public static void printHelp() {
@@ -78,6 +114,7 @@ class CommandLineArgs {
                 .build());
 
         addKafkaOptions(result);
+        addElasticsearchOptions(result);
 
         return result;
     }
@@ -98,6 +135,32 @@ class CommandLineArgs {
                 .longOpt("kafka_servers")
                 .hasArg()
                 .desc("Kafka config property: bootstrap.servers")
+                .build());
+    }
+
+    private static void addElasticsearchOptions(Options options) {
+        options.addOption(Option.builder("esa")
+                .longOpt("elasticsearch_address")
+                .hasArg()
+                .desc("Elasticsearch server address")
+                .build());
+
+        options.addOption(Option.builder("esp")
+                .longOpt("elasticsearch_port")
+                .hasArg()
+                .desc("Elasticsearch server port")
+                .build());
+
+        options.addOption(Option.builder("esc")
+                .longOpt("elasticsearch_cluster_name")
+                .hasArg()
+                .desc("Elasticsearch cluster name")
+                .build());
+
+        options.addOption(Option.builder("esi")
+                .longOpt("elasticsearch_index")
+                .hasArg()
+                .desc("Elasticsearch index name")
                 .build());
     }
 }

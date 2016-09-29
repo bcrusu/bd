@@ -8,7 +8,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
@@ -41,7 +40,7 @@ public class KafkaEventWriter implements IEventWriter {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() throws Exception {
         _producer.close();
     }
 

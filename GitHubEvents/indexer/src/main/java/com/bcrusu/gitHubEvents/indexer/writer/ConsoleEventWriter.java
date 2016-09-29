@@ -2,8 +2,6 @@ package com.bcrusu.gitHubEvents.indexer.writer;
 
 import com.bcrusu.gitHubEvents.indexer.Event;
 
-import java.io.IOException;
-
 public class ConsoleEventWriter implements IEventWriter {
     @Override
     public void write(Event event) {
@@ -11,6 +9,6 @@ public class ConsoleEventWriter implements IEventWriter {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() throws Exception {
     }
 }

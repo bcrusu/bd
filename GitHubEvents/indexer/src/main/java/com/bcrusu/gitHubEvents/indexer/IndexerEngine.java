@@ -6,10 +6,7 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscription;
 
-import java.io.Closeable;
-import java.io.IOException;
-
-class IndexerEngine implements Closeable {
+class IndexerEngine implements AutoCloseable {
     private static final Logger _logger = LoggerFactory.getLogger(IndexerEngine.class);
 
     private final KafkaEventSource _eventSource;
@@ -30,7 +27,7 @@ class IndexerEngine implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() throws Exception {
         if (_subscription == null || _subscription.isUnsubscribed())
             return;
 

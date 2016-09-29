@@ -1,17 +1,14 @@
 package com.bcrusu.gitHubEvents.loader;
 
 import com.bcrusu.gitHubEvents.loader.api.GitHubEvent;
-import com.bcrusu.gitHubEvents.loader.writer.IEventWriter;
 import com.bcrusu.gitHubEvents.loader.api.GitHubEventSource;
+import com.bcrusu.gitHubEvents.loader.writer.IEventWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscription;
 
-import java.io.Closeable;
-import java.io.IOException;
-
-class LoaderEngine implements Closeable {
+class LoaderEngine implements AutoCloseable {
     private static final Logger _logger = LoggerFactory.getLogger(LoaderEngine.class);
 
     private final GitHubEventSource _eventSource;
@@ -32,7 +29,7 @@ class LoaderEngine implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() throws Exception {
         if (_subscription == null || _subscription.isUnsubscribed())
             return;
 
