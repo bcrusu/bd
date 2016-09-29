@@ -7,7 +7,7 @@ import java.io.IOException;
 public class ConsoleEventWriter implements IEventWriter {
     @Override
     public void write(Event event) {
-        System.out.println(String.format("Event: id=%s, type=%s", event.getId(), event.getJson()));
+        System.out.println(String.format("Event: id=%s", event.getId()));
     }
 
     @Override

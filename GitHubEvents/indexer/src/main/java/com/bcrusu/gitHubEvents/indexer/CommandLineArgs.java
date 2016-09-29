@@ -41,6 +41,10 @@ class CommandLineArgs {
         return _commandLine.getOptionValue("kt");
     }
 
+    public boolean getSeekToBeginning() {
+        return _commandLine.hasOption("skt");
+    }
+
     public static CommandLineArgs parse(String[] args) {
         CommandLineParser parser = new DefaultParser();
 
@@ -83,6 +87,11 @@ class CommandLineArgs {
                 .longOpt("kafka_topic")
                 .hasArg()
                 .desc("Kafka topic")
+                .build());
+
+        options.addOption(Option.builder("skt")
+                .longOpt("seek_to_beginning")
+                .desc("Seek Kafka topic to beginning")
                 .build());
 
         options.addOption(Option.builder("ks")
