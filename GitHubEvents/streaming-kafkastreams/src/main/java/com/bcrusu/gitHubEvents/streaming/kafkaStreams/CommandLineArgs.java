@@ -4,6 +4,7 @@ import org.apache.commons.cli.*;
 
 class CommandLineArgs {
     private final static String DEFAULT_KAFKA_SERVER = "localhost:9092";
+    private final static String DEFAULT_KAFKA_STREAMS_STATE_DIR = "/tmp/kafka-streams";
 
     private static Options _options;
 
@@ -15,6 +16,10 @@ class CommandLineArgs {
 
     private CommandLineArgs(CommandLine commandLine) {
         _commandLine = commandLine;
+    }
+
+    public String getId() {
+        return _commandLine.getOptionValue("id");
     }
 
     public String getKafkaServer() {
@@ -31,6 +36,14 @@ class CommandLineArgs {
 
     public boolean getKafkaSeekToBeginning() {
         return _commandLine.hasOption("skt");
+    }
+
+    public String getKafkaStreamsStateDir(){
+        String result = DEFAULT_KAFKA_STREAMS_STATE_DIR;
+        if (_commandLine.hasOption("sd"))
+            result = _commandLine.getOptionValue("sd");
+
+        return result;
     }
 
     public static CommandLineArgs parse(String[] args) {
@@ -86,6 +99,12 @@ class CommandLineArgs {
                 .longOpt("kafka_servers")
                 .hasArg()
                 .desc("Kafka config property: bootstrap.servers")
+                .build());
+
+        options.addOption(Option.builder("sd")
+                .longOpt("state_dir")
+                .hasArg()
+                .desc("Kafka config property: state.dir")
                 .build());
     }
 }

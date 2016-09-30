@@ -17,7 +17,6 @@ class KafkaEventSource {
     private Observable<Event> _observable = null;
 
     public KafkaEventSource(String clientId, String bootstrapServers, String topic, boolean seekToBeginning) {
-        _seekToBeginning = seekToBeginning;
         if (clientId == null) throw new IllegalArgumentException("clientId");
         if (bootstrapServers == null) throw new IllegalArgumentException("bootstrapServers");
         if (topic == null) throw new IllegalArgumentException("topic");
@@ -25,6 +24,7 @@ class KafkaEventSource {
         _clientId = clientId;
         _bootstrapServers = bootstrapServers;
         _topic = topic;
+        _seekToBeginning = seekToBeginning;
     }
 
     public Observable<Event> getObservable() {
