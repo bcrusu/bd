@@ -1,4 +1,4 @@
-package com.bcrusu.gitHubEvents.indexer.kafka;
+package com.bcrusu.gitHubEvents.common.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -6,11 +6,11 @@ import org.apache.kafka.common.TopicPartition;
 
 import java.util.Collection;
 
-public class ConsumerRebalanceListenerImpl implements ConsumerRebalanceListener {
-    private final KafkaConsumer<String, String> _consumer;
+public class CustomConsumerRebalanceListener implements ConsumerRebalanceListener {
+    private final KafkaConsumer _consumer;
     private final boolean _seekToBeginning;
 
-    public ConsumerRebalanceListenerImpl(KafkaConsumer<String, String> consumer, boolean seekToBeginning) {
+    public CustomConsumerRebalanceListener(KafkaConsumer consumer, boolean seekToBeginning) {
         _consumer = consumer;
         _seekToBeginning = seekToBeginning;
     }

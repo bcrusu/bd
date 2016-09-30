@@ -1,6 +1,6 @@
 package com.bcrusu.gitHubEvents.indexer;
 
-import com.bcrusu.gitHubEvents.indexer.kafka.ConsumerRebalanceListenerImpl;
+import com.bcrusu.gitHubEvents.common.kafka.CustomConsumerRebalanceListener;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.*;
 import rx.Observable;
@@ -38,7 +38,7 @@ class KafkaEventSource {
     private Observable<Event> createObservable() {
         Observable<Event> result = Observable.create(subscriber -> {
             try (KafkaConsumer<String, String> consumer = createKafkaConsumer()) {
-                ConsumerRebalanceListener listener = new ConsumerRebalanceListenerImpl(consumer, _seekToBeginning);
+                ConsumerRebalanceListener listener = new CustomConsumerRebalanceListener(consumer, _seekToBeginning);
                 consumer.subscribe(Collections.singletonList(_topic), listener);
 
                 ConsumerRecords<String, String> records = consumer.poll(Long.MAX_VALUE);

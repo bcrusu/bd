@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>com.bcrusu</groupId>
-            <artifactId>gitHubEvents-core</artifactId>
+            <artifactId>gitHubEvents-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

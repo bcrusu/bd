@@ -10,9 +10,10 @@
     <name>GitHub Events Parent POM</name>
 
     <modules>
-        <module>core</module>
+        <module>common</module>
         <module>loader</module>
         <module>indexer</module>
+        <module>streaming-kafkastreams</module>
     </modules>
 
     <properties>

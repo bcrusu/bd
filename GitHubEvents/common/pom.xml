@@ -10,13 +10,17 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>gitHubEvents-core</artifactId>
-    <name>GitHub Events Core</name>
+    <artifactId>gitHubEvents-common</artifactId>
+    <name>GitHub Events Common</name>
 
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
         </dependency>
     </dependencies>
 
