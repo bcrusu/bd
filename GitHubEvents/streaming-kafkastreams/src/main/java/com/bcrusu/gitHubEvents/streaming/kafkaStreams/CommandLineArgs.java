@@ -34,10 +34,6 @@ class CommandLineArgs {
         return _commandLine.getOptionValue("kt");
     }
 
-    public boolean getKafkaSeekToBeginning() {
-        return _commandLine.hasOption("skt");
-    }
-
     public String getKafkaStreamsStateDir(){
         String result = DEFAULT_KAFKA_STREAMS_STATE_DIR;
         if (_commandLine.hasOption("sd"))
@@ -65,13 +61,6 @@ class CommandLineArgs {
     private static Options buildOptions() {
         Options result = new Options();
 
-        result.addOption(Option.builder("ew")
-                .required()
-                .longOpt("event_writer")
-                .hasArg()
-                .desc("Event Writer Type")
-                .build());
-
         result.addOption(Option.builder("id")
                 .required()
                 .hasArg()
@@ -88,11 +77,6 @@ class CommandLineArgs {
                 .longOpt("kafka_topic")
                 .hasArg()
                 .desc("Kafka topic")
-                .build());
-
-        options.addOption(Option.builder("skt")
-                .longOpt("seek_to_beginning")
-                .desc("Seek Kafka topic to beginning")
                 .build());
 
         options.addOption(Option.builder("ks")

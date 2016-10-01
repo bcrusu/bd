@@ -35,8 +35,7 @@ public class Main {
         String clientId = args.getId();
         String bootstrapServers = args.getKafkaServer();
         String topic = args.getKafkaTopic();
-        boolean seekToBeginning = args.getKafkaSeekToBeginning();
 
-        return new EventsStreamer(stateDir, clientId, bootstrapServers, topic, seekToBeginning);
+        return new EventsStreamer(stateDir, clientId, bootstrapServers, topic);
     }
 }

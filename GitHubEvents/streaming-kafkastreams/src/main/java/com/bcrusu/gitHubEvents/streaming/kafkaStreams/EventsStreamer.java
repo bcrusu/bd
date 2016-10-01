@@ -1,6 +1,8 @@
 package com.bcrusu.gitHubEvents.streaming.kafkaStreams;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
@@ -14,23 +16,23 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.TimeWindows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
-class EventsStreamer implements AutoCloseable{
+class EventsStreamer implements AutoCloseable {
     private static final Logger _logger = LoggerFactory.getLogger(EventsStreamer.class);
 
     private final String _clientId;
     private final String _bootstrapServers;
     private final String _topic;
-    private final boolean _seekToBeginning;
     private final String _stateDir;
 
     private KafkaStreams _streams;
 
-    public EventsStreamer(String stateDir, String clientId, String bootstrapServers, String topic, boolean seekToBeginning) {
+    public EventsStreamer(String stateDir, String clientId, String bootstrapServers, String topic) {
         if (stateDir == null) throw new IllegalArgumentException("stateDir");
         if (clientId == null) throw new IllegalArgumentException("clientId");
         if (bootstrapServers == null) throw new IllegalArgumentException("bootstrapServers");
@@ -40,7 +42,6 @@ class EventsStreamer implements AutoCloseable{
         _clientId = clientId;
         _bootstrapServers = bootstrapServers;
         _topic = topic;
-        _seekToBeginning = seekToBeginning;
     }
 
     public void start() {
@@ -51,7 +52,7 @@ class EventsStreamer implements AutoCloseable{
         Properties props = createStreamsProperties();
 
         _streams = new KafkaStreams(builder, props);
-        _streams.cleanUp();
+        _streams.start();
     }
 
     @Override
@@ -64,15 +65,28 @@ class EventsStreamer implements AutoCloseable{
     }
 
     private KStreamBuilder createStreamBuilder() {
+        Serde<JsonNode> jsonSerde = getJsonSerde();
         KStreamBuilder builder = new KStreamBuilder();
-        KStream<String, JsonNode> source = builder.stream(Serdes.String(), getJsonSerde(), _topic);
+        KStream<String, JsonNode> source = builder.stream(Serdes.String(), jsonSerde, _topic);
 
-        //TODO: actual event counters (grouped by user/repo/org and windowed)
-        KTable<String, Long> countsByKey = source.filter(Predicates::valueNotNull)
+        TimeWindows timeWindows = TimeWindows.of("RollingLastHourEveryFiveMinutes", 60 * 60 * 1000L).advanceBy(5 * 60 * 1000L);
+
+        KStream<WindowedEventType, Long> countsByKey = source.filter(Predicates::valueNotNull)
                 .map(EventsStreamer::mapEventType)
-                .countByKey("count");
+                .countByKey(timeWindows)
+                .toStream()
+                .map((windowedKey, value) -> {
+                    WindowedEventType newKey = new WindowedEventType();
+                    newKey.windowStart = windowedKey.window().start();
+                    newKey.eventType = windowedKey.key();
 
-        countsByKey.to(Serdes.String(), Serdes.Long(), "events-by-key");
+                    return new KeyValue<>(newKey, value);
+                });
+
+        //TODO: ingest to cassandra/redis
+        countsByKey.foreach((key, value) -> {
+            System.out.println(String.format("Window: %d\tKey: %s\tCount: %d", key.windowStart, key.eventType, value));
+        });
 
         return builder;
     }
@@ -97,10 +111,13 @@ class EventsStreamer implements AutoCloseable{
         props.put(StreamsConfig.KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         props.put(StreamsConfig.VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         props.put(StreamsConfig.STATE_DIR_CONFIG, _stateDir);
-
-        if (_seekToBeginning)
-            props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         return props;
+    }
+
+    private static class WindowedEventType {
+        long windowStart;
+        String eventType;
     }
 }
