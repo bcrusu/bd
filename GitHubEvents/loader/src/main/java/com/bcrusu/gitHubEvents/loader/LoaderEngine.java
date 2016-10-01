@@ -38,7 +38,7 @@ class LoaderEngine implements AutoCloseable {
     }
 
     private void processEvent(GitHubEvent event) {
-        _logger.debug("Processing event: {}", event.getId());
+        _logger.trace("Processing event: {}", event.getId());
 
         _eventWriter.write(event);
     }

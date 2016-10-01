@@ -67,11 +67,13 @@ class EventsStreamer implements AutoCloseable {
     private KStreamBuilder createStreamBuilder() {
         Serde<JsonNode> jsonSerde = getJsonSerde();
         KStreamBuilder builder = new KStreamBuilder();
+
         KStream<String, JsonNode> source = builder.stream(Serdes.String(), jsonSerde, _topic);
 
         TimeWindows timeWindows = TimeWindows.of("RollingLastHourEveryFiveMinutes", 60 * 60 * 1000L).advanceBy(5 * 60 * 1000L);
 
-        KStream<WindowedEventType, Long> countsByKey = source.filter(Predicates::valueNotNull)
+        KStream<WindowedEventType, Long> countsByKey = source
+                .filter(Predicates::valueNotNull)
                 .map(EventsStreamer::mapEventType)
                 .countByKey(timeWindows)
                 .toStream()
@@ -107,11 +109,11 @@ class EventsStreamer implements AutoCloseable {
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "gitHubEvents-streaming-kafkastreams");
         props.put(StreamsConfig.CLIENT_ID_CONFIG, "gitHubEvents-streaming-kafkastreams-" + _clientId);
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, _bootstrapServers);
-        //TODO: props.put(StreamsConfig.ZOOKEEPER_CONNECT_CONFIG, "localhost:2181");
         props.put(StreamsConfig.KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         props.put(StreamsConfig.VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         props.put(StreamsConfig.STATE_DIR_CONFIG, _stateDir);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(StreamsConfig.TIMESTAMP_EXTRACTOR_CLASS_CONFIG, GitHubEventTimestampExtractor.class);
 
         return props;
     }
