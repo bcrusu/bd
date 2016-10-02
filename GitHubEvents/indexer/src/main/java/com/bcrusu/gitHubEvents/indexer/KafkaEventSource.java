@@ -41,15 +41,18 @@ class KafkaEventSource {
                 ConsumerRebalanceListener listener = new CustomConsumerRebalanceListener(consumer, _seekToBeginning);
                 consumer.subscribe(Collections.singletonList(_topic), listener);
 
-                ConsumerRecords<String, String> records = consumer.poll(Long.MAX_VALUE);
+                poll_loop:
+                while(true) {
+                    ConsumerRecords<String, String> records = consumer.poll(1000);
 
-                for (ConsumerRecord<String, String> record : records) {
-                    // stop reading records if the subscriber went away
-                    if (subscriber.isUnsubscribed())
-                        break;
+                    for (ConsumerRecord<String, String> record : records) {
+                        // stop reading records if the subscriber went away
+                        if (subscriber.isUnsubscribed())
+                            break poll_loop;
 
-                    Event event = new Event(record.key(), record.value());
-                    subscriber.onNext(event);
+                        Event event = new Event(record.key(), record.value());
+                        subscriber.onNext(event);
+                    }
                 }
             }
 
