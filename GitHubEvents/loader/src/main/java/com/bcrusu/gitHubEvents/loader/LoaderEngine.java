@@ -1,8 +1,9 @@
 package com.bcrusu.gitHubEvents.loader;
 
-import com.bcrusu.gitHubEvents.loader.api.GitHubEvent;
+import com.bcrusu.gitHubEvents.common.gitHub.GitHubEvent;
 import com.bcrusu.gitHubEvents.loader.api.GitHubEventSource;
 import com.bcrusu.gitHubEvents.loader.writer.IEventWriter;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -24,7 +25,7 @@ class LoaderEngine implements AutoCloseable {
         if (_subscription != null)
             throw new IllegalStateException("Already running.");
 
-        Observable<GitHubEvent> observable = _eventSource.getObservable();
+        Observable<JsonNode> observable = _eventSource.getObservable();
         _subscription = observable.subscribe(this::processEvent);
     }
 
@@ -37,8 +38,10 @@ class LoaderEngine implements AutoCloseable {
         _eventWriter.close();
     }
 
-    private void processEvent(GitHubEvent event) {
-        _logger.trace("Processing event: {}", event.getId());
+    private void processEvent(JsonNode jsonNode) {
+        GitHubEvent event = GitHubEvent.create(jsonNode);
+
+        _logger.trace("Processing event: {}", event.id);
 
         _eventWriter.write(event);
     }

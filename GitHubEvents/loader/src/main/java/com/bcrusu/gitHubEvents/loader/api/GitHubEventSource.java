@@ -31,7 +31,7 @@ public class GitHubEventSource {
     private final int _pollInterval;
     private final OkHttpClient _client;
 
-    private Observable<GitHubEvent> _observable = null;
+    private Observable<JsonNode> _observable = null;
     private RateLimit _lastRateLimit = null;
     private String _lastETag = null;
     private String _lastLastModified = null;
@@ -48,7 +48,7 @@ public class GitHubEventSource {
         this(oauthToken, url, 5);
     }
 
-    public Observable<GitHubEvent> getObservable() {
+    public Observable<JsonNode> getObservable() {
         if (_observable == null) {
             _observable = createObservable();
         }
@@ -56,14 +56,14 @@ public class GitHubEventSource {
         return _observable;
     }
 
-    private Observable<GitHubEvent> createObservable() {
-        Observable<GitHubEvent> result = Observable.create(subscriber -> {
+    private Observable<JsonNode> createObservable() {
+        Observable<JsonNode> result = Observable.create(subscriber -> {
             String url = _url;
             boolean isFirstPage = true;
             String eTag = _lastETag;
             String lastModified = _lastLastModified;
 
-            LinkedList<GitHubEvent> toEmit = new LinkedList<>();
+            LinkedList<JsonNode> toEmit = new LinkedList<>();
             Set<String> seenEventIds = new HashSet<>();  // some events are pushed to next page during consecutive fetches
 
             page_fetch_loop:
@@ -88,12 +88,12 @@ public class GitHubEventSource {
                 _lastRateLimit = RateLimit.parse(response);
                 _logger.info("GitHub API rate limit: limit={}, remaining={}", _lastRateLimit.getLimit(), _lastRateLimit.getRemaining());
 
-                List<GitHubEvent> events = parseResponseBody(response.body());
+                List<JsonNode> events = parseResponseBody(response.body());
                 if (events == null)
                     break;
 
-                for (GitHubEvent event : events) {
-                    String eventId = event.getId();
+                for (JsonNode event : events) {
+                    String eventId = getEventId(event);
 
                     // skip events from previous page
                     if (seenEventIds.contains(eventId))
@@ -122,7 +122,7 @@ public class GitHubEventSource {
                 toEmit.forEach(subscriber::onNext);
 
                 // save last event id to be used on next poll operation
-                _lastEventId = toEmit.getLast().getId();
+                _lastEventId = getEventId(toEmit.getLast());
             }
 
             subscriber.onCompleted();
@@ -183,7 +183,7 @@ public class GitHubEventSource {
         return true;
     }
 
-    private List<GitHubEvent> parseResponseBody(ResponseBody body) {
+    private List<JsonNode> parseResponseBody(ResponseBody body) {
         byte[] bodyBytes;
         try {
             bodyBytes = body.bytes();
@@ -196,11 +196,14 @@ public class GitHubEventSource {
             JsonNode jsonNode = new ObjectMapper().readTree(bodyBytes);
 
             return StreamSupport.stream(jsonNode.spliterator(), false)
-                    .map(GitHubEvent::create)
                     .collect(Collectors.toList());
         } catch (IOException e) {
             _logger.error("Error parsing response body", e);
             return null;
         }
+    }
+
+    private static String getEventId(JsonNode jsonNode) {
+        return jsonNode.get("id").textValue();
     }
 }

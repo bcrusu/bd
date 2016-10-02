@@ -1,21 +1,15 @@
 package com.bcrusu.gitHubEvents.streaming.kafkaStreams;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.bcrusu.gitHubEvents.common.gitHub.GitHubEvent;
+import com.bcrusu.gitHubEvents.common.kafka.GitHubEventSerdeFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.connect.json.JsonDeserializer;
-import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
-import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,12 +59,12 @@ class EventsStreamer implements AutoCloseable {
     }
 
     private KStreamBuilder createStreamBuilder() {
-        Serde<JsonNode> jsonSerde = getJsonSerde();
+        Serde<GitHubEvent> serde = GitHubEventSerdeFactory.getJsonSerde();
         KStreamBuilder builder = new KStreamBuilder();
 
-        KStream<String, JsonNode> source = builder.stream(Serdes.String(), jsonSerde, _topic);
+        KStream<String, GitHubEvent> source = builder.stream(Serdes.String(), serde, _topic);
 
-        TimeWindows timeWindows = TimeWindows.of("RollingLastHourEveryFiveMinutes", 60 * 60 * 1000L).advanceBy(5 * 60 * 1000L);
+        TimeWindows timeWindows = TimeWindows.of("countBy5Seconds", 5 * 1000L);
 
         KStream<WindowedEventType, Long> countsByKey = source
                 .filter(Predicates::valueNotNull)
@@ -93,15 +87,8 @@ class EventsStreamer implements AutoCloseable {
         return builder;
     }
 
-    private static Serde<JsonNode> getJsonSerde() {
-        Serializer<JsonNode> jsonSerializer = new JsonSerializer();
-        Deserializer<JsonNode> jsonDeserializer = new JsonDeserializer();
-        return Serdes.serdeFrom(jsonSerializer, jsonDeserializer);
-    }
-
-    private static KeyValue<String, Long> mapEventType(String eventId, JsonNode node) {
-        String eventType = node.get("type").textValue();
-        return new KeyValue<>(eventType, 1L);
+    private static KeyValue<String, Long> mapEventType(String eventId, GitHubEvent event) {
+        return new KeyValue<>(event.type, 1L);
     }
 
     private Properties createStreamsProperties() {

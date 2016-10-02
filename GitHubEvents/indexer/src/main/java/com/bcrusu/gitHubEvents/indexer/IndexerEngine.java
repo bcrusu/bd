@@ -36,7 +36,7 @@ class IndexerEngine implements AutoCloseable {
     }
 
     private void processEvent(Event event) {
-        _logger.debug("Processing event: {}", event.getId());
+        _logger.trace("Processing event: {}", event.getId());
 
         _eventWriter.write(event);
     }

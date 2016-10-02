@@ -1,6 +1,6 @@
 package com.bcrusu.gitHubEvents.loader.writer;
 
-import com.bcrusu.gitHubEvents.loader.api.GitHubEvent;
+import com.bcrusu.gitHubEvents.common.gitHub.GitHubEvent;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -14,7 +14,7 @@ import java.util.concurrent.ExecutionException;
 public class KafkaEventWriter implements IEventWriter {
     private static final Logger _logger = LoggerFactory.getLogger(KafkaEventWriter.class);
 
-    private final KafkaProducer<String, String> _producer;
+    private final KafkaProducer<String, GitHubEvent> _producer;
     private final String _topic;
 
     public KafkaEventWriter(String bootstrapServers, String topic) {
@@ -27,10 +27,10 @@ public class KafkaEventWriter implements IEventWriter {
 
     @Override
     public void write(GitHubEvent event) {
-        String eventId = event.getId();
-        String eventBody = event.getJson();
+        String eventId = event.id;
+        Long timestamp = event.createdAt;
 
-        ProducerRecord<String, String> record = new ProducerRecord<>(_topic, eventId, eventBody);
+        ProducerRecord<String, GitHubEvent> record = new ProducerRecord<>(_topic, null, timestamp, eventId, event);
 
         try {
             _producer.send(record).get();
@@ -44,12 +44,12 @@ public class KafkaEventWriter implements IEventWriter {
         _producer.close();
     }
 
-    private static KafkaProducer<String, String> createKafkaProducer(String bootstrapServers) {
+    private static KafkaProducer<String, GitHubEvent> createKafkaProducer(String bootstrapServers) {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "gitHubEvents-loader");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "com.bcrusu.gitHubEvents.common.kafka.GitHubEventSerializer");
         props.put(ProducerConfig.ACKS_CONFIG, "1");
         //props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "gzip");
         props.put(ProducerConfig.RETRIES_CONFIG, "3");
