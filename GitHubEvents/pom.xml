@@ -14,6 +14,7 @@
         <module>loader</module>
         <module>indexer</module>
         <module>streaming-kafkastreams</module>
+        <module>store-cassandra</module>
     </modules>
 
     <properties>
@@ -27,6 +28,7 @@
         <log4j.version>2.6.2</log4j.version>
         <elasticsearch.version>2.4.0</elasticsearch.version>
         <rocksdb.version>4.11.2</rocksdb.version>
+        <cassandra.version>3.1.0</cassandra.version>
     </properties>
 
     <repositories>
@@ -93,6 +95,16 @@
                 <groupId>org.rocksdb</groupId>
                 <artifactId>rocksdbjni</artifactId>
                 <version>${rocksdb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.datastax.cassandra</groupId>
+                <artifactId>cassandra-driver-core</artifactId>
+                <version>${cassandra.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.datastax.cassandra</groupId>
+                <artifactId>cassandra-driver-mapping</artifactId>
+                <version>${cassandra.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
