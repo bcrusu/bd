@@ -6,7 +6,13 @@ class DropKeyspaceAction extends KeyspaceAction {
     }
 
     @Override
-    public void executeInternal(String keyspace) {
+    public String description() {
+        return "DROP";
+    }
+
+    @Override
+    public boolean executeInternal(String keyspace) {
         dropKeyspace(keyspace);
+        return true;
     }
 }

@@ -1,5 +1,7 @@
 package com.bcrusu.gitHubEvents.streaming.kafkaStreams;
 
+import com.bcrusu.gitHubEvents.common.store.IEventStoreWriter;
+import com.bcrusu.gitHubEvents.store.cassandra.CassandraStoreWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +37,16 @@ public class Main {
         String clientId = args.getId();
         String bootstrapServers = args.getKafkaServer();
         String topic = args.getKafkaTopic();
+        IEventStoreWriter writer = createEventStoreWriter(args);
 
-        return new EventsStreamer(stateDir, clientId, bootstrapServers, topic);
+        return new EventsStreamer(stateDir, clientId, bootstrapServers, topic, writer);
+    }
+
+    private static IEventStoreWriter createEventStoreWriter(CommandLineArgs args) {
+        String address = args.getCassandraServerAddress();
+        int port = args.getCassandraServerPort();
+        String keyspace = args.getCassandraKeyspace();
+
+        return new CassandraStoreWriter(address, port, keyspace);
     }
 }

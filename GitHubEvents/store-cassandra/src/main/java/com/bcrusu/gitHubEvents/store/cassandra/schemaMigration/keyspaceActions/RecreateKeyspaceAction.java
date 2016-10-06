@@ -6,10 +6,15 @@ public class RecreateKeyspaceAction extends KeyspaceAction {
     }
 
     @Override
-    protected void executeInternal(String keyspace) {
+    public String description() {
+        return "RECREATE";
+    }
+
+    @Override
+    protected boolean executeInternal(String keyspace) {
         dropKeyspace(keyspace);
         createKeyspace(keyspace);
         useKeyspace(keyspace);
-        runMigrations();
+        return runMigrations();
     }
 }

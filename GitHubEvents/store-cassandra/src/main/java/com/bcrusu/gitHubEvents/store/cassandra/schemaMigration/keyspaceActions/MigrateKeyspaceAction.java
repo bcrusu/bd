@@ -5,8 +5,13 @@ class MigrateKeyspaceAction extends KeyspaceAction {
         super(contactPointAddress, contactPointPort);
     }
 
-    public void executeInternal(String keyspace) {
+    @Override
+    public String description() {
+        return "MIGRATE";
+    }
+
+    public boolean executeInternal(String keyspace) {
         useKeyspace(keyspace);
-        runMigrations();
+        return runMigrations();
     }
 }

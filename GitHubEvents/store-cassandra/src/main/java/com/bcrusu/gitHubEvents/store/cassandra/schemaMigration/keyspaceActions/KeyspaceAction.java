@@ -21,7 +21,7 @@ public abstract class KeyspaceAction {
         logger = LoggerFactory.getLogger(this.getClass());
     }
 
-    public final void execute(String keyspace) {
+    public final boolean execute(String keyspace) {
         if (_session != null)
             throw new IllegalStateException("Execution is in progress.");
 
@@ -30,7 +30,7 @@ public abstract class KeyspaceAction {
             session = CassandraUtils.openSession(_contactPointAddress, _contactPointPort);
             _session = session;
 
-            executeInternal(keyspace);
+            return executeInternal(keyspace);
         } finally {
             _session = null;
             if (session != null)
@@ -38,19 +38,21 @@ public abstract class KeyspaceAction {
         }
     }
 
-    protected abstract void executeInternal(String keyspace);
+    public abstract String description();
+
+    protected abstract boolean executeInternal(String keyspace);
 
     protected Session getSession() {
         return _session;
     }
 
     protected void useKeyspace(String keyspace) {
-        String statement = String.format("USE \"%s\"", keyspace);
+        String statement = String.format("USE %s", keyspace);
         _session.execute(statement);
     }
 
     protected void createKeyspace(String keyspace) {
-        String statement = String.format("CREATE KEYSPACE \"%s\" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };", keyspace);
+        String statement = String.format("CREATE KEYSPACE %s WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 };", keyspace);
 
         logger.info("Creating keyspace '{}'", keyspace);
         _session.execute(statement);
@@ -64,7 +66,7 @@ public abstract class KeyspaceAction {
     }
 
     protected void dropKeyspace(String keyspace) {
-        String statement = String.format("DROP KEYSPACE IF EXISTS \"%s\";", keyspace);
+        String statement = String.format("DROP KEYSPACE IF EXISTS %s;", keyspace);
 
         logger.info("Dropping keyspace '{}'", keyspace);
         _session.execute(statement);

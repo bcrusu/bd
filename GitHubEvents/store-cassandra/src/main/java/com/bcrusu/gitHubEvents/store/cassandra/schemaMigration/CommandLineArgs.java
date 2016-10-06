@@ -5,7 +5,7 @@ import org.apache.commons.cli.*;
 class CommandLineArgs {
     private final static String DEFAULT_CASSANDRA_SERVER_ADDRESS = "localhost";
     private final static int DEFAULT_CASSANDRA_SERVER_PORT = 9042;
-    private final static String DEFAULT_CASSANDRA_KEYSPACE = "gitHubEvents";
+    private final static String DEFAULT_CASSANDRA_KEYSPACE = "githubevents";
     private final static String DEFAULT_ACTION_TYPE = "migrate";
 
     private static Options _options;

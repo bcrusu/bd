@@ -2,40 +2,43 @@ package com.bcrusu.gitHubEvents.streaming.kafkaStreams;
 
 import com.bcrusu.gitHubEvents.common.gitHub.GitHubEvent;
 import com.bcrusu.gitHubEvents.common.kafka.GitHubEventSerdeFactory;
+import com.bcrusu.gitHubEvents.common.store.IEventStoreWriter;
+import com.bcrusu.gitHubEvents.common.store.WindowedEventType;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.kstream.ForeachAction;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.kstream.TimeWindows;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
 class EventsStreamer implements AutoCloseable {
-    private static final Logger _logger = LoggerFactory.getLogger(EventsStreamer.class);
-
     private final String _clientId;
     private final String _bootstrapServers;
     private final String _topic;
     private final String _stateDir;
+    private final IEventStoreWriter _eventStoreWriter;
 
     private KafkaStreams _streams;
 
-    public EventsStreamer(String stateDir, String clientId, String bootstrapServers, String topic) {
+    public EventsStreamer(String stateDir, String clientId, String bootstrapServers, String topic,
+                          IEventStoreWriter eventStoreWriter) {
         if (stateDir == null) throw new IllegalArgumentException("stateDir");
         if (clientId == null) throw new IllegalArgumentException("clientId");
         if (bootstrapServers == null) throw new IllegalArgumentException("bootstrapServers");
         if (topic == null) throw new IllegalArgumentException("topic");
+        if (eventStoreWriter == null) throw new IllegalArgumentException("eventStoreWriter");
 
         _stateDir = stateDir;
         _clientId = clientId;
         _bootstrapServers = bootstrapServers;
         _topic = topic;
+        _eventStoreWriter = eventStoreWriter;
     }
 
     public void start() {
@@ -56,6 +59,9 @@ class EventsStreamer implements AutoCloseable {
 
         _streams.close();
         _streams.cleanUp();
+
+        // TODO: switch ctor. dependency to provider implementation. Should not close not-owned resource here
+        _eventStoreWriter.close();
     }
 
     private KStreamBuilder createStreamBuilder() {
@@ -64,25 +70,11 @@ class EventsStreamer implements AutoCloseable {
 
         KStream<String, GitHubEvent> source = builder.stream(Serdes.String(), serde, _topic);
 
-        TimeWindows timeWindows = TimeWindows.of("countBy5Seconds", 5 * 1000L);
+        TimeWindows eventsPerSecond = TimeWindows.of("eventsPerSecond", 1000L);
+        TimeWindows eventsPerMinute = TimeWindows.of("eventsPerMinute", 60 * 1000L);
 
-        KStream<WindowedEventType, Long> countsByKey = source
-                .filter(Predicates::valueNotNull)
-                .map(EventsStreamer::mapEventType)
-                .countByKey(timeWindows)
-                .toStream()
-                .map((windowedKey, value) -> {
-                    WindowedEventType newKey = new WindowedEventType();
-                    newKey.windowStart = windowedKey.window().start();
-                    newKey.eventType = windowedKey.key();
-
-                    return new KeyValue<>(newKey, value);
-                });
-
-        //TODO: ingest to cassandra/redis
-        countsByKey.foreach((key, value) -> {
-            System.out.println(String.format("Window: %d\tKey: %s\tCount: %d", key.windowStart, key.eventType, value));
-        });
+        addEventCounterStream(source, eventsPerSecond, _eventStoreWriter::writeEventsPerSecond);
+        addEventCounterStream(source, eventsPerMinute, _eventStoreWriter::writeEventsPerMinute);
 
         return builder;
     }
@@ -105,8 +97,18 @@ class EventsStreamer implements AutoCloseable {
         return props;
     }
 
-    private static class WindowedEventType {
-        long windowStart;
-        String eventType;
+    private void addEventCounterStream(KStream<String, GitHubEvent> source, TimeWindows timeWindows,
+                                       ForeachAction<WindowedEventType, Long> writerFunction) {
+        KStream<WindowedEventType, Long> countsByKey = source
+                .filter(Predicates::valueNotNull)
+                .map(EventsStreamer::mapEventType)
+                .countByKey(timeWindows)
+                .toStream()
+                .map((windowedKey, value) -> {
+                    WindowedEventType newKey = new WindowedEventType(windowedKey.window().start(), windowedKey.key());
+                    return new KeyValue<>(newKey, value);
+                });
+
+        countsByKey.foreach(writerFunction);
     }
 }

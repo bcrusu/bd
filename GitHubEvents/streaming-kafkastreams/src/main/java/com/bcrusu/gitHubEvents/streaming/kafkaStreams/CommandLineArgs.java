@@ -5,6 +5,9 @@ import org.apache.commons.cli.*;
 class CommandLineArgs {
     private final static String DEFAULT_KAFKA_SERVER = "localhost:9092";
     private final static String DEFAULT_KAFKA_STREAMS_STATE_DIR = "/tmp/kafka-streams";
+    private final static String DEFAULT_CASSANDRA_SERVER_ADDRESS = "localhost";
+    private final static int DEFAULT_CASSANDRA_SERVER_PORT = 9042;
+    private final static String DEFAULT_CASSANDRA_KEYSPACE = "githubevents";
 
     private static Options _options;
 
@@ -38,6 +41,30 @@ class CommandLineArgs {
         String result = DEFAULT_KAFKA_STREAMS_STATE_DIR;
         if (_commandLine.hasOption("sd"))
             result = _commandLine.getOptionValue("sd");
+
+        return result;
+    }
+
+    public String getCassandraServerAddress() {
+        String result = DEFAULT_CASSANDRA_SERVER_ADDRESS;
+        if (_commandLine.hasOption("address"))
+            result = _commandLine.getOptionValue("address");
+
+        return result;
+    }
+
+    public int getCassandraServerPort() {
+        int result = DEFAULT_CASSANDRA_SERVER_PORT;
+        if (_commandLine.hasOption("port"))
+            result = Integer.parseInt(_commandLine.getOptionValue("port"));
+
+        return result;
+    }
+
+    public String getCassandraKeyspace() {
+        String result = DEFAULT_CASSANDRA_KEYSPACE;
+        if (_commandLine.hasOption("keyspace"))
+            result = _commandLine.getOptionValue("keyspace");
 
         return result;
     }
@@ -89,6 +116,25 @@ class CommandLineArgs {
                 .longOpt("state_dir")
                 .hasArg()
                 .desc("Kafka config property: state.dir")
+                .build());
+    }
+
+    private static void addCassandraOptions(Options options) {
+        options.addOption(Option.builder("address")
+                .longOpt("server_address")
+                .hasArg()
+                .desc("Cassandra server address")
+                .build());
+
+        options.addOption(Option.builder("port")
+                .longOpt("server_port")
+                .hasArg()
+                .desc("Cassandra server port")
+                .build());
+
+        options.addOption(Option.builder("keyspace")
+                .hasArg()
+                .desc("Cassandra keyspace")
                 .build());
     }
 }

@@ -17,14 +17,22 @@ public class Main {
             return;
         }
 
+        boolean success = false;
         try {
-            _logger.info("Running keyspace action ...");
             KeyspaceAction action = createKeyspaceAction(commandLineArgs);
+
+            _logger.info("Running keyspace action '{}'...", action.description());
+
             String keyspace = commandLineArgs.getKeyspace();
-            action.execute(keyspace);
+            success = action.execute(keyspace);
         } catch (Exception e) {
             _logger.error("Unexpected error", e);
             System.exit(-2);
+        }
+
+        if (!success) {
+            _logger.error("Migration not successful");
+            System.exit(-3);
         }
     }
 

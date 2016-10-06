@@ -6,9 +6,14 @@ public class CreateKeyspaceAction extends KeyspaceAction {
     }
 
     @Override
-    protected void executeInternal(String keyspace) {
+    public String description() {
+        return "CREATE";
+    }
+
+    @Override
+    protected boolean executeInternal(String keyspace) {
         createKeyspace(keyspace);
         useKeyspace(keyspace);
-        runMigrations();
+        return runMigrations();
     }
 }
