@@ -1,4 +1,4 @@
-package com.bcrusu.gitHubEvents.store.cassandra;
+package com.bcrusu.gitHubEvents.store.cassandra.schemaMigration;
 
 import org.apache.commons.cli.*;
 
@@ -6,6 +6,7 @@ class CommandLineArgs {
     private final static String DEFAULT_CASSANDRA_SERVER_ADDRESS = "localhost";
     private final static int DEFAULT_CASSANDRA_SERVER_PORT = 9042;
     private final static String DEFAULT_CASSANDRA_KEYSPACE = "gitHubEvents";
+    private final static String DEFAULT_ACTION_TYPE = "migrate";
 
     private static Options _options;
 
@@ -28,6 +29,14 @@ class CommandLineArgs {
         } catch (ParseException e) {
             return null;
         }
+    }
+
+    public String getActionType() {
+        String result = DEFAULT_ACTION_TYPE;
+        if (_commandLine.hasOption("action"))
+            result = _commandLine.getOptionValue("action");
+
+        return result;
     }
 
     public String getServerAddress() {
@@ -61,28 +70,30 @@ class CommandLineArgs {
 
     private static Options buildOptions() {
         Options result = new Options();
+
+        result.addOption(Option.builder("action")
+                .hasArg()
+                .desc("Keyspace action: create|migrate|recreate|drop")
+                .build());
+
         addCassandraOptions(result);
         return result;
     }
 
     private static void addCassandraOptions(Options options) {
         options.addOption(Option.builder("address")
-                .required()
                 .longOpt("server_address")
                 .hasArg()
                 .desc("Cassandra server address")
                 .build());
 
         options.addOption(Option.builder("port")
-                .required()
                 .longOpt("server_port")
                 .hasArg()
                 .desc("Cassandra server port")
                 .build());
 
-        options.addOption(Option.builder("k")
-                .required()
-                .longOpt("keyspace")
+        options.addOption(Option.builder("keyspace")
                 .hasArg()
                 .desc("Cassandra keyspace")
                 .build());

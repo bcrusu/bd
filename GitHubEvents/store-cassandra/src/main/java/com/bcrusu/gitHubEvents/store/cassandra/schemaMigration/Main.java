@@ -1,6 +1,7 @@
-package com.bcrusu.gitHubEvents.store.cassandra;
+package com.bcrusu.gitHubEvents.store.cassandra.schemaMigration;
 
-import com.bcrusu.gitHubEvents.store.cassandra.schemaMigration.SchemaMigration;
+import com.bcrusu.gitHubEvents.store.cassandra.schemaMigration.keyspaceActions.KeyspaceAction;
+import com.bcrusu.gitHubEvents.store.cassandra.schemaMigration.keyspaceActions.KeyspaceActionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,26 +17,21 @@ public class Main {
             return;
         }
 
-        boolean result = false;
         try {
-            _logger.info("Running schema migration...");
-            SchemaMigration schemaMigrator = createSchemaMigrator(commandLineArgs);
-            result = schemaMigrator.run();
+            _logger.info("Running keyspace action ...");
+            KeyspaceAction action = createKeyspaceAction(commandLineArgs);
+            String keyspace = commandLineArgs.getKeyspace();
+            action.execute(keyspace);
         } catch (Exception e) {
             _logger.error("Unexpected error", e);
             System.exit(-2);
         }
-
-        if (!result) {
-            _logger.error("Schema migration failed.");
-            System.exit(-3);
-        }
     }
 
-    private static SchemaMigration createSchemaMigrator(CommandLineArgs args) {
+    private static KeyspaceAction createKeyspaceAction(CommandLineArgs args) {
         String address = args.getServerAddress();
         int port = args.getServerPort();
-        String keyspace = args.getKeyspace();
-        return new SchemaMigration(address, port, keyspace);
+        String actionType = args.getActionType();
+        return KeyspaceActionFactory.create(actionType, address, port);
     }
 }
