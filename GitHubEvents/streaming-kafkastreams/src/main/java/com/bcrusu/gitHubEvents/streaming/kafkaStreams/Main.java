@@ -9,10 +9,9 @@ public class Main {
     private static final Logger _logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
-        CommandLineArgs commandLineArgs = CommandLineArgs.parse(args);
-        if (commandLineArgs == null) {
+        EventStreamerProperties properties = EventStreamerProperties.parse(args);
+        if (!properties.validate()) {
             System.err.println("Invalid command line arguments.");
-            CommandLineArgs.printHelp();
             System.exit(-1);
             return;
         }
@@ -20,7 +19,7 @@ public class Main {
         System.out.println("Press any key to exit...");
 
         try {
-            try (EventsStreamer streamer = createStreamer(commandLineArgs)) {
+            try (EventsStreamer streamer = createStreamer(properties)) {
                 _logger.info("running...");
                 streamer.start();
 
@@ -32,21 +31,10 @@ public class Main {
         }
     }
 
-    private static EventsStreamer createStreamer(CommandLineArgs args) {
-        String stateDir = args.getKafkaStreamsStateDir();
-        String clientId = args.getId();
-        String bootstrapServers = args.getKafkaServer();
-        String topic = args.getKafkaTopic();
-        IEventStoreWriter writer = createEventStoreWriter(args);
-
-        return new EventsStreamer(stateDir, clientId, bootstrapServers, topic, writer);
-    }
-
-    private static IEventStoreWriter createEventStoreWriter(CommandLineArgs args) {
-        String address = args.getCassandraServerAddress();
-        int port = args.getCassandraServerPort();
-        String keyspace = args.getCassandraKeyspace();
-
-        return new CassandraStoreWriter(address, port, keyspace);
+    private static EventsStreamer createStreamer(EventStreamerProperties properties) {
+        String stateDir = properties.getStateDir();
+        String clientId = properties.getId();
+        IEventStoreWriter writer = new CassandraStoreWriter(properties.cassandra);
+        return new EventsStreamer(stateDir, clientId, properties.kafka, writer);
     }
 }

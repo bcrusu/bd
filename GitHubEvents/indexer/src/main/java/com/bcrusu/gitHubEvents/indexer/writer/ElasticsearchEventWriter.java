@@ -1,5 +1,6 @@
 package com.bcrusu.gitHubEvents.indexer.writer;
 
+import com.bcrusu.gitHubEvents.common.cli.ElasticsearchProperties;
 import com.bcrusu.gitHubEvents.indexer.Event;
 import com.bcrusu.gitHubEvents.indexer.IndexerError;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -17,20 +18,19 @@ import java.util.concurrent.ExecutionException;
 public class ElasticsearchEventWriter implements IEventWriter {
     private static final String INDEX_TYPE = "events";
     private static final Logger _logger = LoggerFactory.getLogger(ElasticsearchEventWriter.class);
-    private final TransportClient _transportClient;
-    private final String _index;
 
-    public ElasticsearchEventWriter(String address, int port, String clusterName, String index) {
-        if (address == null) throw new IllegalArgumentException("address");
-        if (clusterName == null) throw new IllegalArgumentException("clusterName");
-        if (index == null) throw new IllegalArgumentException("index");
-        _index = index;
-        _transportClient = createTransportClient(address, port, clusterName, index);
+    private final TransportClient _transportClient;
+    private final ElasticsearchProperties _properties;
+
+    public ElasticsearchEventWriter(ElasticsearchProperties properties) {
+        if (properties == null) throw new IllegalArgumentException("properties");
+        _properties = properties;
+        _transportClient = createTransportClient(properties);
     }
 
     @Override
     public void write(Event event) {
-        _transportClient.prepareIndex(_index, INDEX_TYPE, event.getId())
+        _transportClient.prepareIndex(_properties.getIndex(), INDEX_TYPE, event.getId())
                 .setSource(event.getJson())
                 .get();
     }
@@ -40,10 +40,10 @@ public class ElasticsearchEventWriter implements IEventWriter {
         _transportClient.close();
     }
 
-    private static TransportClient createTransportClient(String address, int port, String clusterName, String index) {
+    private static TransportClient createTransportClient(ElasticsearchProperties properties) {
         Settings.Builder settingsBuilder = Settings.settingsBuilder()
                 .put("client.transport.sniff", true)
-                .put("cluster.name", clusterName);
+                .put("cluster.name", properties.getCluster());
 
         Settings settings = settingsBuilder.build();
         TransportClient client;
@@ -52,12 +52,12 @@ public class ElasticsearchEventWriter implements IEventWriter {
             client = TransportClient.builder()
                     .settings(settings)
                     .build()
-                    .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(address), port));
+                    .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(properties.getAddress()), properties.getPort()));
         } catch (UnknownHostException e) {
             throw new IndexerError("Failed to connect to Elasticsearch server", e);
         }
 
-        ensureIndexExists(client, index);
+        ensureIndexExists(client, properties.getIndex());
         return client;
     }
 

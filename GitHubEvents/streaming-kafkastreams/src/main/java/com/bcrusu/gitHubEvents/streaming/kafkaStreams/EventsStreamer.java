@@ -1,5 +1,6 @@
 package com.bcrusu.gitHubEvents.streaming.kafkaStreams;
 
+import com.bcrusu.gitHubEvents.common.cli.KafkaProperties;
 import com.bcrusu.gitHubEvents.common.gitHub.GitHubEvent;
 import com.bcrusu.gitHubEvents.common.kafka.GitHubEventSerdeFactory;
 import com.bcrusu.gitHubEvents.common.store.IEventStoreWriter;
@@ -19,25 +20,21 @@ import java.util.Properties;
 
 class EventsStreamer implements AutoCloseable {
     private final String _clientId;
-    private final String _bootstrapServers;
-    private final String _topic;
     private final String _stateDir;
+    private final KafkaProperties _kafkaProperties;
     private final IEventStoreWriter _eventStoreWriter;
 
     private KafkaStreams _streams;
 
-    public EventsStreamer(String stateDir, String clientId, String bootstrapServers, String topic,
-                          IEventStoreWriter eventStoreWriter) {
+    public EventsStreamer(String stateDir, String clientId, KafkaProperties kafkaProperties, IEventStoreWriter eventStoreWriter) {
         if (stateDir == null) throw new IllegalArgumentException("stateDir");
         if (clientId == null) throw new IllegalArgumentException("clientId");
-        if (bootstrapServers == null) throw new IllegalArgumentException("bootstrapServers");
-        if (topic == null) throw new IllegalArgumentException("topic");
+        if (kafkaProperties == null) throw new IllegalArgumentException("kafkaProperties");
         if (eventStoreWriter == null) throw new IllegalArgumentException("eventStoreWriter");
 
         _stateDir = stateDir;
         _clientId = clientId;
-        _bootstrapServers = bootstrapServers;
-        _topic = topic;
+        _kafkaProperties = kafkaProperties;
         _eventStoreWriter = eventStoreWriter;
     }
 
@@ -68,7 +65,7 @@ class EventsStreamer implements AutoCloseable {
         Serde<GitHubEvent> serde = GitHubEventSerdeFactory.getJsonSerde();
         KStreamBuilder builder = new KStreamBuilder();
 
-        KStream<String, GitHubEvent> source = builder.stream(Serdes.String(), serde, _topic);
+        KStream<String, GitHubEvent> source = builder.stream(Serdes.String(), serde, _kafkaProperties.getTopic());
 
         TimeWindows eventsPerSecond = TimeWindows.of("eventsPerSecond", 1000L);
         TimeWindows eventsPerMinute = TimeWindows.of("eventsPerMinute", 60 * 1000L);
@@ -87,7 +84,7 @@ class EventsStreamer implements AutoCloseable {
         Properties props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "gitHubEvents-streaming-kafkastreams");
         props.put(StreamsConfig.CLIENT_ID_CONFIG, "gitHubEvents-streaming-kafkastreams-" + _clientId);
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, _bootstrapServers);
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, _kafkaProperties.getBootstrapServers());
         props.put(StreamsConfig.KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         props.put(StreamsConfig.VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         props.put(StreamsConfig.STATE_DIR_CONFIG, _stateDir);

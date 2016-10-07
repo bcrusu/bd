@@ -1,5 +1,6 @@
 package com.bcrusu.gitHubEvents.loader.api;
 
+import com.bcrusu.gitHubEvents.common.cli.GitHubApiProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.OkHttpClient;
@@ -26,8 +27,7 @@ public class GitHubEventSource {
     private final static String API_MEDIA_TYPE = "application/vnd.github.v3+json";
     private final static String HTTP_HEADER_X_POLL_INTERVAL = "X-Poll-Interval";
 
-    private final String _oauthToken;
-    private final String _url;
+    private final GitHubApiProperties _properties;
     private final int _pollInterval;
     private final OkHttpClient _client;
 
@@ -37,15 +37,14 @@ public class GitHubEventSource {
     private String _lastLastModified = null;
     private String _lastEventId = null;  // last seen event id
 
-    private GitHubEventSource(String oauthToken, String url, int pollInterval) {
-        _oauthToken = oauthToken;
-        _url = url;
+    private GitHubEventSource(GitHubApiProperties properties, int pollInterval) {
+        _properties = properties;
         _pollInterval = pollInterval;
         _client = new OkHttpClient();
     }
 
-    public GitHubEventSource(String oauthToken, String url) {
-        this(oauthToken, url, 5);
+    public GitHubEventSource(GitHubApiProperties properties) {
+        this(properties, 5);
     }
 
     public Observable<JsonNode> getObservable() {
@@ -58,7 +57,7 @@ public class GitHubEventSource {
 
     private Observable<JsonNode> createObservable() {
         Observable<JsonNode> result = Observable.create(subscriber -> {
-            String url = _url;
+            String url = _properties.getEventsUrl();
             boolean isFirstPage = true;
             String eTag = _lastETag;
             String lastModified = _lastLastModified;
@@ -162,7 +161,7 @@ public class GitHubEventSource {
                 .url(url)
                 .header(HttpConstants.HTTP_HEADER_USER_AGENT, "minion007")
                 .header(HttpConstants.HTTP_HEADER_ACCEPT, API_MEDIA_TYPE)
-                .header(HttpConstants.HTTP_HEADER_AUTHORIZATION, "token " + _oauthToken);
+                .header(HttpConstants.HTTP_HEADER_AUTHORIZATION, "token " + _properties.getOauth2Token());
     }
 
     private boolean isRateLimitExceeded() {

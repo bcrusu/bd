@@ -8,10 +8,9 @@ public class Main {
     private static final Logger _logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) throws Exception {
-        CommandLineArgs commandLineArgs = CommandLineArgs.parse(args);
-        if (commandLineArgs == null) {
+        IndexerProperties properties = IndexerProperties.parse(args);
+        if (!properties.validate()) {
             System.err.println("Invalid command line arguments.");
-            CommandLineArgs.printHelp();
             System.exit(-1);
             return;
         }
@@ -19,7 +18,7 @@ public class Main {
         System.out.println("Indexing events. Press any key to exit...");
 
         try {
-            try (IndexerEngine engine = createIndexerEngine(commandLineArgs)) {
+            try (IndexerEngine engine = createIndexerEngine(properties)) {
                 _logger.info("running...");
                 engine.run();
 
@@ -31,18 +30,14 @@ public class Main {
         }
     }
 
-    private static IndexerEngine createIndexerEngine(CommandLineArgs args) {
-        KafkaEventSource eventSource = createEventSource(args);
-        IEventWriter eventWriter = EventWriterFactory.create(args);
+    private static IndexerEngine createIndexerEngine(IndexerProperties properties) {
+        KafkaEventSource eventSource = createEventSource(properties);
+        IEventWriter eventWriter = EventWriterFactory.create(properties);
         return new IndexerEngine(eventSource, eventWriter);
     }
 
-    private static KafkaEventSource createEventSource(CommandLineArgs args) {
-        String id = args.getId();
-        String bootstrapServers = args.getKafkaServer();
-        String topic = args.getKafkaTopic();
-        boolean seekToBeginning = args.getKafkaSeekToBeginning();
-
-        return new KafkaEventSource(id, bootstrapServers, topic, seekToBeginning);
+    private static KafkaEventSource createEventSource(IndexerProperties properties) {
+        String id = properties.getId();
+        return new KafkaEventSource(id, properties.kafka, false);
     }
 }

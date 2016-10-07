@@ -38,6 +38,8 @@ class LoaderEngine implements AutoCloseable {
         _eventWriter.close();
     }
 
+
+
     private void processEvent(JsonNode jsonNode) {
         GitHubEvent event = GitHubEvent.create(jsonNode);
 

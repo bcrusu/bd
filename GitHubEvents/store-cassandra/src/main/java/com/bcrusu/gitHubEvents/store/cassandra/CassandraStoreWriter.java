@@ -1,22 +1,17 @@
 package com.bcrusu.gitHubEvents.store.cassandra;
 
+import com.bcrusu.gitHubEvents.common.cli.CassandraProperties;
 import com.bcrusu.gitHubEvents.common.store.IEventStoreWriter;
 import com.bcrusu.gitHubEvents.common.store.WindowedEventType;
 import com.datastax.driver.core.Session;
 
 public class CassandraStoreWriter implements IEventStoreWriter {
-    private final String _contactPointAddress;
-    private final int _contactPointPort;
-    private final String _keyspace;
+    private final CassandraProperties _properties;
     private Session _session;
 
-    public CassandraStoreWriter(String contactPointAddress, int contactPointPort, String keyspace) {
-        if (contactPointAddress == null) throw new IllegalArgumentException("contactPointAddress");
-        if (keyspace == null) throw new IllegalArgumentException("keyspace");
-
-        _contactPointAddress = contactPointAddress;
-        _contactPointPort = contactPointPort;
-        _keyspace = keyspace;
+    public CassandraStoreWriter(CassandraProperties properties) {
+        if (properties == null) throw new IllegalArgumentException("properties");
+        _properties = properties;
     }
 
     @Override
@@ -35,7 +30,7 @@ public class CassandraStoreWriter implements IEventStoreWriter {
         if (_session != null)
             return;
 
-        _session = CassandraUtils.openSession(_contactPointAddress, _contactPointPort);
+        _session = CassandraUtils.openSession(_properties.getContactPoints(), _properties.getPort());
     }
 
     @Override

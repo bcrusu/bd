@@ -9,16 +9,12 @@ class EventWriterFactory {
     public final static String EVENT_WRITER_TYPE_ELASTICSEARCH = "elasticsearch";
     public final static String EVENT_WRITER_TYPE_CONSOLE = "console";
 
-    public static IEventWriter create(CommandLineArgs args) {
-        String eventWriterType = args.getEventWriterType();
+    public static IEventWriter create(IndexerProperties properties) {
+        String eventWriterType = properties.getEventWriterType();
 
         switch (eventWriterType.toLowerCase()) {
             case EVENT_WRITER_TYPE_ELASTICSEARCH:
-                String address = args.getElasticsearchServerAddress();
-                int port = args.getElasticsearchServerPort();
-                String clusterName = args.getElasticsearchClusterName();
-                String index = args.getElasticsearchIndex();
-                return new ElasticsearchEventWriter(address, port, clusterName, index);
+                return new ElasticsearchEventWriter(properties.elasticsearch);
             case EVENT_WRITER_TYPE_CONSOLE:
                 return new ConsoleEventWriter();
             default:
