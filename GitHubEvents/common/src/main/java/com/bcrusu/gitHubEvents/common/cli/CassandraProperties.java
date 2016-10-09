@@ -16,7 +16,12 @@ public class CassandraProperties extends CliProperties {
 
     @Override
     public boolean validate() {
-        return hasValidIntProperty(PROPERTY_NAME_PORT);
+        boolean result = true;
+
+        if (hasProperty(PROPERTY_NAME_PORT))
+            result &= hasValidIntProperty(PROPERTY_NAME_PORT);
+
+        return result;
     }
 
     public String getContactPoints() {

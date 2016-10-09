@@ -5,6 +5,7 @@ import com.bcrusu.gitHubEvents.store.cassandra.CassandraStoreWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 public class Main {
     private static final Logger _logger = LoggerFactory.getLogger(Main.class);
 

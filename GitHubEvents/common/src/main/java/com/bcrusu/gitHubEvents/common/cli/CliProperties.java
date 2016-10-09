@@ -39,6 +39,10 @@ public abstract class CliProperties {
         return Boolean.parseBoolean(value);
     }
 
+    protected boolean hasProperty(String name) {
+        return _properties.contains(name);
+    }
+
     protected boolean hasValidStringProperty(String name) {
         return _properties.getProperty(name) != null;
     }

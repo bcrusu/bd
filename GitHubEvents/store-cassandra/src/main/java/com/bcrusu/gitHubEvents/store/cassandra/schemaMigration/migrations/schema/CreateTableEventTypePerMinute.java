@@ -20,7 +20,7 @@ public class CreateTableEventTypePerMinute extends SchemaMigration {
         try {
             final String statement = "CREATE TABLE EventTypePerMinute\n" +
                     "(day date, minute timestamp, eventType text, count bigint,\n" +
-                    "PRIMARY KEY (day, minute));";
+                    "PRIMARY KEY ((day), minute, eventType));";
 
             executeWithSchemaAgreement(new SimpleStatement(statement));
         } catch (final Exception e) {

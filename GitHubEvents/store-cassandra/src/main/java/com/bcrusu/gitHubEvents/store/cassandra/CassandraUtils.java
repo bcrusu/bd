@@ -27,4 +27,9 @@ public class CassandraUtils {
         session.close();
         cluster.close();
     }
+
+    public static void useKeyspace(Session session, String keyspace) {
+        String statement = String.format("USE %s", keyspace);
+        session.execute(statement);
+    }
 }

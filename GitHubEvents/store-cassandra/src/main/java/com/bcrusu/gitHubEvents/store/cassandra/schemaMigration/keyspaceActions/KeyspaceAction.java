@@ -47,8 +47,7 @@ public abstract class KeyspaceAction {
     }
 
     protected void useKeyspace(String keyspace) {
-        String statement = String.format("USE %s", keyspace);
-        _session.execute(statement);
+        CassandraUtils.useKeyspace(_session, keyspace);
     }
 
     protected void createKeyspace(String keyspace) {

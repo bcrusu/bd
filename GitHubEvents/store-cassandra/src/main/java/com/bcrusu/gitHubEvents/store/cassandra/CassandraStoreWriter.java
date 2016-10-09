@@ -5,8 +5,11 @@ import com.bcrusu.gitHubEvents.common.cli.CassandraProperties;
 import com.bcrusu.gitHubEvents.common.store.IEventStoreWriter;
 import com.bcrusu.gitHubEvents.common.store.WindowedEventType;
 import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.LocalDate;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
+
+import java.util.Date;
 
 public class CassandraStoreWriter implements IEventStoreWriter {
     private final CassandraProperties _cassandraProperties;
@@ -28,9 +31,9 @@ public class CassandraStoreWriter implements IEventStoreWriter {
         Long second = TimeUtils.truncatedToSeconds(windowedEventType.windowStart);
 
         if (_writeEventsPerSecond == null)
-            _writeEventsPerSecond = _session.prepare("UPDATE EventTypePerSecond SET day=?, second=?, eventtype=?, count=?;");
+            _writeEventsPerSecond = _session.prepare("INSERT INTO EventTypePerSecond (day, second, eventtype, count) VALUES (?, ?, ?, ?);");
 
-        BoundStatement bound = _writeEventsPerSecond.bind(day, second, windowedEventType.eventType, count);
+        BoundStatement bound = _writeEventsPerSecond.bind(LocalDate.fromMillisSinceEpoch(day), new Date(second), windowedEventType.eventType, count);
         _session.execute(bound);
     }
 
@@ -42,9 +45,9 @@ public class CassandraStoreWriter implements IEventStoreWriter {
         Long minute = TimeUtils.truncatedToMinutes(windowedEventType.windowStart);
 
         if (_writeEventsPerMinute == null)
-            _writeEventsPerMinute = _session.prepare("UPDATE EventTypePerMinute SET day=?, minute=?, eventtype=?, count=?;");
+            _writeEventsPerMinute = _session.prepare("INSERT INTO EventTypePerMinute (day, minute, eventtype, count) VALUES (?, ?, ?, ?);");
 
-        BoundStatement bound = _writeEventsPerMinute.bind(day, minute, windowedEventType.eventType, count);
+        BoundStatement bound = _writeEventsPerMinute.bind(LocalDate.fromMillisSinceEpoch(day), new Date(minute), windowedEventType.eventType, count);
         _session.execute(bound);
     }
 
@@ -52,7 +55,10 @@ public class CassandraStoreWriter implements IEventStoreWriter {
         if (_session != null)
             return;
 
-        _session = CassandraUtils.openSession(_cassandraProperties.getContactPoints(), _cassandraProperties.getPort());
+        Session session = CassandraUtils.openSession(_cassandraProperties.getContactPoints(), _cassandraProperties.getPort());
+        CassandraUtils.useKeyspace(session, _cassandraProperties.getKeyspace());
+
+        _session = session;
     }
 
     @Override

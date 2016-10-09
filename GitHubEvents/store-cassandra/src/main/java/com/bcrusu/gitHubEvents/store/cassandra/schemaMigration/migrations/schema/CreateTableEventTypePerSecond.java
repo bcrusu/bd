@@ -21,7 +21,7 @@ public class CreateTableEventTypePerSecond extends SchemaMigration {
         try {
             final String statement = "CREATE TABLE EventTypePerSecond\n" +
                     "(day date, second timestamp, eventType text, count bigint,\n" +
-                    "PRIMARY KEY (day, second));";
+                    "PRIMARY KEY ((day), second, eventType));";
 
             executeWithSchemaAgreement(new SimpleStatement(statement));
         } catch (final Exception e) {
