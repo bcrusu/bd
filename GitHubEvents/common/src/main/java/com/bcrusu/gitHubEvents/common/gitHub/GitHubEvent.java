@@ -26,7 +26,7 @@ public class GitHubEvent {
         result.organisationLogin = JsonUtils.getTextValue(jsonNode, "org", "login");
 
         String createdAtStr = JsonUtils.getTextValue(jsonNode, "created_at");
-        result.createdAt = createdAtStr != null ? Instant.parse(createdAtStr).getEpochSecond() : 0L;
+        result.createdAt = createdAtStr != null ? Instant.parse(createdAtStr).toEpochMilli() : 0L;
 
         return result;
     }

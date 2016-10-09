@@ -15,7 +15,10 @@ class CommandLineArgsParser {
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
-            if (!isPropertyName(arg)) {
+            if (arg == null)
+                continue;
+
+            if (!hasValidPropertyPrefix(arg)) {
                 _logger.warn("Skipped argument '{}'. Invalid property format.", arg);
                 continue;
             }
@@ -31,13 +34,22 @@ class CommandLineArgsParser {
                 propName = arg.substring(2);
             }
 
+            if (!isValidPropertyName(propName)) {
+                _logger.warn("Skipped argument '{}'. Invalid property name.", arg);
+                continue;
+            }
+
             result.setProperty(propName, value);
         }
 
         return result;
     }
 
-    private static boolean isPropertyName(String arg) {
+    private static boolean hasValidPropertyPrefix(String arg) {
         return arg != null && arg.startsWith(PROPERTY_NAME_PREFIX);
+    }
+
+    private static boolean isValidPropertyName(String name) {
+        return name != null && name.trim().length() > 0;
     }
 }
