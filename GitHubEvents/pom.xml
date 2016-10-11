@@ -14,6 +14,7 @@
         <module>loader</module>
         <module>indexer</module>
         <module>streaming-kafkastreams</module>
+        <module>streaming-storm</module>
         <module>store-cassandra</module>
     </modules>
 
@@ -28,6 +29,7 @@
         <elasticsearch.version>2.4.0</elasticsearch.version>
         <rocksdb.version>4.11.2</rocksdb.version>
         <cassandra.version>3.1.0</cassandra.version>
+        <storm.version>1.0.2</storm.version>
     </properties>
 
     <repositories>
@@ -99,6 +101,18 @@
                 <groupId>com.datastax.cassandra</groupId>
                 <artifactId>cassandra-driver-mapping</artifactId>
                 <version>${cassandra.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.storm</groupId>
+                <artifactId>storm-core</artifactId>
+                <version>${storm.version}</version>
+                <!-- Uncomment following line when deploying to real cluster -->
+                <!--<scope>provided</scope>-->
+            </dependency>
+            <dependency>
+                <groupId>org.apache.storm</groupId>
+                <artifactId>storm-kafka-client</artifactId>
+                <version>${storm.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -2,7 +2,7 @@ package com.bcrusu.gitHubEvents.streaming.kafkaStreams;
 
 import com.bcrusu.gitHubEvents.common.cli.KafkaProperties;
 import com.bcrusu.gitHubEvents.common.gitHub.GitHubEvent;
-import com.bcrusu.gitHubEvents.common.kafka.GitHubEventSerdeFactory;
+import com.bcrusu.gitHubEvents.common.kafka.GitHubEventSerde;
 import com.bcrusu.gitHubEvents.common.store.IEventStoreWriter;
 import com.bcrusu.gitHubEvents.common.store.WindowedEventType;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -62,10 +62,10 @@ class EventsStreamer implements AutoCloseable {
     }
 
     private KStreamBuilder createStreamBuilder() {
-        Serde<GitHubEvent> serde = GitHubEventSerdeFactory.getJsonSerde();
+        Serde<GitHubEvent> valuesSerde = new GitHubEventSerde();
         KStreamBuilder builder = new KStreamBuilder();
 
-        KStream<String, GitHubEvent> source = builder.stream(Serdes.String(), serde, _kafkaProperties.getTopic());
+        KStream<String, GitHubEvent> source = builder.stream(Serdes.String(), valuesSerde, _kafkaProperties.getTopic());
 
         TimeWindows eventsPerSecond = TimeWindows.of("eventsPerSecond", 1000L);
         TimeWindows eventsPerMinute = TimeWindows.of("eventsPerMinute", 60 * 1000L);
@@ -85,8 +85,6 @@ class EventsStreamer implements AutoCloseable {
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "gitHubEvents-streaming-kafkastreams");
         props.put(StreamsConfig.CLIENT_ID_CONFIG, "gitHubEvents-streaming-kafkastreams-" + _clientId);
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, _kafkaProperties.getBootstrapServers());
-        props.put(StreamsConfig.KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-        props.put(StreamsConfig.VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         props.put(StreamsConfig.STATE_DIR_CONFIG, _stateDir);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(StreamsConfig.TIMESTAMP_EXTRACTOR_CLASS_CONFIG, GitHubEventTimestampExtractor.class);
